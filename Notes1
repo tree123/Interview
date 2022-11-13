@@ -1,0 +1,221 @@
+Buy and sell stock 2
+https://leetcode.com/problems/best-time-to-buy-and-sell-stock-ii/
+max profit by buying and selling stock can buy and immediately sell on same day
+def maxProfit(self, prices: List[int]) -> int:
+        profit = 0
+        for i in range(1, len(prices)):
+            if prices[i] > prices[i-1]:
+                profit += prices[i]-prices[i-1]
+        return profit
+ for every increase in price just buy it 
+
+https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-cooldown/
+buy and sell with cool down
+
+if buying - then next can be sell or cooldown 
+if selling - then skip next and then i+2 can be buy or cooldown
+if cooldown - check it is buying state or selling state and 
+
+def maxProfit(self, prices: List[int]) -> int:
+        dp = {} #(i, buying)
+        def helper(i, buying):
+            if i >= len(prices):
+                return 0
+            if (i, buying) in dp:
+                return dp[(i, buying)]
+            cooldwn = helper(i+1, buying)
+            if buying:
+                deal = helper(i+1, not buying) - prices[i]
+            else:
+                deal = helper(i+2, not buying) + prices[i]
+            dp[(i, buying)] = max(cooldwn, deal)
+            return dp[(i, buying)]
+        return helper(0, True)
+
+class Solution:
+    # BRUTE FORCE fix all possible postions for ist transaction and get another transaction from rest part of array TLE
+    def maxProfit(self, prices: List[int]) -> int:
+        # if len(prices) < 2:
+        #     return 0
+        # dp = {}
+        # def getBestTransactionFromIndex(i):
+        #     min_sf = float('inf')
+        #     profit = 0
+        #     sp = i
+        #     while i < len(prices):
+        #         if prices[i] > min_sf:
+        #             profit = max(profit, prices[i]-min_sf)
+        #         min_sf = min(prices[i], min_sf)
+        #         i+=1
+        #     #print(sp, profit)
+        #     dp[sp] = profit
+        #     return dp[sp]
+
+        # res = 0
+        # for i in range(len(prices)):
+        #     for j in range(i+1, len(prices)):
+        #         if prices[j] > prices[i]:
+        #             profit = prices[j]-prices[i] + (dp[j+1] if j+1 in dp else getBestTransactionFromIndex(j+1))
+        #             res= max(res, profit)
+        # return res
+        
+        # Decision Tree with state (bought or sold) and transactions (max 2 transaction) as deps. used MEMO 
+        
+        # dp = {}
+        # def helper(i, bought, transactions):
+        #     if (i, bought, transactions) in dp:
+        #         return dp[(i, bought, transactions)]
+        #     if i>=len(prices) or transactions >= 2:
+        #         return 0
+        #     skip = helper(i+1, bought, transactions)
+        #     if not bought:
+        #         deal = helper(i+1,True, transactions) - prices[i] # buy deal
+        #     else:
+        #         deal = helper(i+1, False, transactions+1) + prices[i] # sell deal
+        #     dp[(i, bought, transactions)] = max(deal, skip)
+        #     #print(i, bought, transactions, deal, skip, dp[(i, bought, transactions)] )
+        #     return dp[(i, bought, transactions)]
+        # return helper(0, False, 0)
+
+        # Best solution (O(n))
+        # find the best deal from left to right 
+        # find best deal from right to left
+        # compute profit at every index (r to l + l to r(on i-1th to avoid overlap))
+        """
+        [3,3,5,0,0,3,1,4]
+         0 0 2 2 2 3 3 4  LR
+         4 4 4 4 4 3 3 0  RL
+
+         4 4 4 6 6 5 6 3   profit = LR[i-1] + RL[i] 
+        """
+        if len(prices) < 2:
+            return 0
+        min_sf = prices[0]
+        lr_profit = [0]*len(prices)
+        for i in range(1,len(prices)):
+            lr_profit[i] = max(lr_profit[i-1], prices[i]-min_sf)
+            min_sf = min(min_sf, prices[i])
+        max_sf = prices[-1]
+        rl_profit = [0]*len(prices)
+        for i in range(len(prices)-2, -1, -1):
+            rl_profit[i] = max(rl_profit[i+1], max_sf-prices[i])
+            max_sf = max(max_sf, prices[i])
+        profit = [0]*len(prices)
+        profit[0] = rl_profit[0]
+        for i in range(1,len(prices)):
+            profit[i] = lr_profit[i-1] + rl_profit[i]
+        return max(profit)
+
+
+
+
+1. combination or subset problem is a recursion problem which is derived based on option to choose or not to choose item at index i 
+
+[1,2,3] --> find combination 
+
+                  []
+                  
+         [1]                 []         ind=0
+         
+  [12]       [1]        [2]       []   ind =1 
+  
+[123][12]  [13] [1]   [23]  [2] [3] []  ind=2 
+
+if there is duplicate element and need avoid duplication in combination then 
+1. sort it 
+2. while recursing around - skip duplicate when recursing with not choosing option 
+
+[1,2,1]
+[1,1,2] -> after sort
+
+                  []
+                  
+         [1]                 []         ind=0
+         
+  [11]       [1]                       ind =1  --> here we  skip index 1 because it is already explored in previous recursion ie [1] 
+  
+[112][11]  [12] [1]      [2]   []      ind=2                    
+
+def helper(i, comb, tot):
+            if tot == target:
+                res.append(comb[::])
+                return
+            if i >= len(candidates) or tot > target:
+                return
+            # choose index candidate
+            comb.append(candidates[i])
+            helper(i+1, comb, tot+candidates[i])
+            # not choose index candidate
+            comb.pop()
+            while i+1 < len(candidates) and candidates[i+1]==candidates[i]: # ignore same candidate
+                i+=1
+            helper(i+1, comb, tot)
+        helper(0, [], 0)
+        
+ 
+ 
+PERMUTATION
+- when combination is choosing from list and solved with choice diagram
+- permutation is arranging -> we take all element and arrange them in different order
+- arrangement problem can be suboptimised by fixing one position and recursing permutation on rest 
+
+123
+
+
+    1     2       3
+   2  3  1  3   2   1
+   3  2  3  1   1   2
+
+class Solution:
+    def permute(self, nums: List[int]) -> List[List[int]]:
+        res = []
+        def helper(per, buck):
+            if not buck:
+                res.append(per[::])
+                return
+            for num in buck:
+                per.append(num) # fixed one element and recurse on rest
+                helper(per, [n for n in buck if n != num])
+                per.pop()
+            
+        helper([], nums)
+        return res
+# unique permutations 
+#decision tree would be like below
+1,1,2
+
+ 1      2   --> [112] ==> {1,2} only permutate in 1 and 2 no duplicate
+1  2    1    ---> [11] ==> {1}  only permutate in 1
+2  1    1
+
+class Solution:
+    def permuteUnique(self, nums: List[int]) -> List[List[int]]:
+        res = []
+        def helper(per, buck):
+            if not buck:
+                res.append(per[:])
+                return
+            uniq_set = set(buck)
+            for num in uniq_set:
+                per.append(num)
+                buck.remove(num)
+                helper(per, buck)
+                buck.append(num)
+                per.pop()
+        helper([], nums)
+        return res
+
+
+BIT Manipulation
+
+https://leetcode.com/problems/single-number/
+
+Note: XOR of 2 same value is always 0 ==> 4^4 = 0
+      XOR or any value with 0 is value ==> 4^0 = 4
+   Thats it just do the xor of all the values
+   
+
+# LINKED LIST
+- Reverse - user prev variable cur.next = prev --> return prev at atlast
+- chek palindrom with O(1) space --> slow and fast ptr --> when fast ptr reaches last -> revers second half of linklist -> now you can do comparison 
+
