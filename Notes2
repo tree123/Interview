@@ -1,0 +1,461 @@
+https://leetcode.com/problems/minimum-number-of-swaps-to-make-the-string-balanced/
+You are given a 0-indexed string s of even length n. The string consists of exactly n / 2 opening brackets '[' and n / 2 closing brackets ']'.
+Return the minimum number of swaps to make s balanced.
+--> just get count of extra closing bracket while iteration  for '[' --> do -1  and for ']' for +1 --> max value of extra closing bracket is the answer
+
+# https://leetcode.com/problems/continuous-subarray-sum/
+Given an integer array nums and an integer k, return true if nums has a good subarray or false otherwise.
+A good subarray is a subarray where:
+its length is at least two, and
+the sum of the elements of the subarray is a multiple of k.
+--> prefix sum --> store  remainder  and index --> if same remainder comes again and index is 2 point away then answer is true.
+
+topk frequent elements: 
+https://leetcode.com/problems/top-k-frequent-elements/
+option 1:
+1- create num-freq map 
+2 - create max heap wrt freq - k log n 
+
+option2: o(n) solution
+bucket sort - not on number but on freq
+size of bucket - max of array size (if all nums is of freq 1)
+create map -> freq : lif of num with this freq [keep max freq so far so that you can check directly from there in bucket]  
+
+
+
+https://leetcode.com/problems/merge-intervals/
+    def merge(self, intervals: List[List[int]]) -> List[List[int]]:
+        ind = 0
+        result = []
+        intervals.sort()
+        temp = intervals[0]
+        for i in range(1, len(intervals)):
+            if intervals[i][0] <= temp[1]:
+                temp = [min(temp[0], intervals[i][0]), max(temp[1], intervals[i][1])]
+            else:
+                result.append(temp)
+                temp = intervals[i]
+        result.append(temp)
+        return result
+
+https://leetcode.com/problems/cheapest-flights-within-k-stops/submissions/
+
+'''
+link_map
+0: 1
+1: 2, 3
+2: 0, 3
+
+wt_map: 
+(0,1) : 100
+(1,2) : 100
+(1,3) : 600
+(2,3) : 200
+'''
+# TLE might be coming because of cyclic nodes
+# just add source to visited while doing dfs and reverse once return from dfs to avoid this. 
+class Solution: # Time Limit Exceeded
+    def findCheapestPrice(self, n: int, flights: List[List[int]], src: int, dst: int, k: int) -> int:
+        route_map = collections.defaultdict(list)
+        weight_map = {}
+        for flight in flights:
+            weight_map[(flight[0],flight[1])] = flight[2]
+            route_map[flight[0]].append(flight[1])
+        cheapest_price = float('inf')
+        def dfs(src, dst, k, cost_so_far):
+            nonlocal cheapest_price
+            if k < 0:
+                return
+            if cost_so_far >= cheapest_price:
+                return
+            for int_dst in route_map[src]:
+                if int_dst == dst:
+                    #cost_so_far + weight_map[(src,dst)] --> this is danger in for loop cost will change for another iteration
+                    cheapest_price = min(cost_so_far + weight_map[(src,dst)], cheapest_price)
+                else:
+                    dfs(int_dst, dst, k-1, cost_so_far + weight_map[(src,int_dst)])
+        
+        dfs(src, dst, k, 0)
+        if cheapest_price == float('inf'):
+            return -1
+        return cheapest_price
+    
+ #Largest Rectangle in Histogram
+ https://leetcode.com/problems/largest-rectangle-in-histogram/
+ '''
+ find minimum in range - area = min*range
+ split from minimum index into two range - repeat same recursively to get area
+ return maximum of result
+ '''
+ class Solution:
+    def largestRectangleArea(self, heights: List[int]) -> int:
+        max_area = 0
+        visited = {}
+        def helper(s,e):
+            if (s,e) in visited:
+                return
+            visited[(s,e)] = True
+            nonlocal max_area
+            if s>e or s <0 or e>=len(heights):
+                return
+            if s==e:
+                max_area = max(max_area, heights[s])
+            _min = float('inf')
+            _min_ind=-1
+            for i in range(s,e+1):
+                _min, _min_ind = (heights[i], i) if heights[i] < _min else (_min, _min_ind)
+            cur_area = _min*(e-s+1)
+            max_area = max(cur_area, max_area)
+            helper(s, _min_ind-1)
+            helper(_min_ind+1, e)
+        helper(0, len(heights)-1)
+        return max_area
+ 
+https://leetcode.com/problems/car-fleet/
+#     0,1  3,3  5,1  8,4  10,1
+#     12     3    7    1     2
+
+#     0,5  0,3  20,1
+#     20   40     30
+#          -if this takes 40 sec then in any case it will take 40 sec not matter how fast prev is rather it can only slow   
+#     - sort
+#     - find time for each to complete
+#     - last to first > if prev is taking less then or equal time merge to 1 fleet 
+
+class Solution:
+    def carFleet(self, target: int, position: List[int], speed: List[int]) -> int:
+        prev_t = None
+        n = 0
+        for pos, vel in sorted(zip(position, speed))[::-1]:
+            dist = target - pos
+            t = dist / vel
+            if not prev_t or t > prev_t:
+                prev_t = t
+                n += 1
+        return n
+
+
+https://leetcode.com/problems/subarray-sum-equals-k
+
+- core logic is k -->  sum(i,j) = sum(0,j) -sum(0, k) --> these are prefix sums
+- sum(0,i) -k ===> we can check if this available in prefix_sum-count map so far; and add the count to result 
+while iterating to compute prefix sum
+- Note: empty array will have 0 sum so prefix_sum-count will initialise as prefix_sum-count = {0:1}
+	def subarraySum(self, nums: List[int], k: int) -> int:
+		ans=0
+		prefsum=0
+		d={0:1}
+
+		for num in nums:
+			prefsum = prefsum + num
+
+			if prefsum-k in d:
+				ans = ans + d[prefsum-k]
+
+			if prefsum not in d:
+				d[prefsum] = 1
+			else:
+				d[prefsum] = d[prefsum]+1
+
+		return ans
+
+https://leetcode.com/problems/longest-well-performing-interval/
+arr -> each item is num of hours worked [2 3 6 8 9 9 3 9 2]
+if num of hours > 8 -> tiring hour
+range -> if more tiring hour then normal (well performed range)
+find max well performed range  --> above 9 9 3 9 2 [5 ans]
+
+bruteforce:
+for each subarr - check if greater then 8 is more then less then 8 - return valid subarr with max size
+ans = 0
+for i in range(len(arr)):
+  for j in range(i, len(arr)):
+   	tiring_count = 0
+	for k in range(i,j+1):
+		if arr[k] > 1:
+			tiring_count +=1
+	if tiring_count > (j+1-i)//2:
+		ans = max(ans, j-i+1)
+return ans 
+this is n3 solution - not good
+
+optimised
+calculate prefix sum 
+hm = {}
+sm = 0
+res = 0
+for i in range(arr)
+   hm[i] = sum+arr[i]
+for i in range(len(arr)):
+   for j in range(i,len(arr)):
+	sm = hm[j] - hm[i]	   
+	if arr[i] > 8 : 
+	    sm+=1
+	else:
+	    sm-=1
+	res = max(sm, res)	
+
+
+
+police catch thieves: 
+https://www.geeksforgeeks.org/policemen-catch-thieves/
+array with police P and thief T  and k 
+1 police can catch 1 Thief
+k is max distance police can search to catch 
+
+bruteforce 
+- start from istpolice
+- search for max dist (k) take the farthest one from back [because there is no police on the back side] --> o(n*k)
+optimise
+-  2 ptr
+- 1 ptr move only on police and 1 ptr only on thieves
+- p1 t1 check
+    1. if  p1 can catch t1 - move both ptr
+    2. if cant - a. if t1 is back side move to next thief 
+    		 b- else move to next police 
+[T,T,T,p,p,T,P,P,T] k =2
+
+p 3 4 6 7
+T 0 1 2 5 8
+P(3) cant catch T(0) so move thief since other police are more front so cant catch 
+P(3) can catch T(1) as 3-1 <= 2 (k) so move both to next 
+p(4) can catch T(2) move both
+P(6) can catch T(5)
+P(7) can catch T(8)
+
+
+notification
+https://github.com/liiight/notifiers
+
+STACK    STACK	STACK   STACK    STACK	STACK  STACK    STACK	STACK   STACK    STACK	STACK
+
+class Solution:
+    def generateParenthesis(self, n: int) -> List[str]:
+        if not n:
+            return []
+        res =set()
+        res.add('()')
+        for i in range(1, n):
+            temp = set()
+            for each in res:
+                for i in range(len(each)+1):
+                    temp.add(each[:i]+'()'+each[i:])
+            res = temp
+        return list(res)
+#############################################################################
+#backtrack
+# open and close bracket all used then result 
+# open bracket available then add open
+# close brack less then open bracket in result and close bracket available then add close
+        temp = [] # since string is immutable use list
+        res = []
+        def helper(oc, cc):
+            #print(oc, cc)
+            if oc == cc == 0:
+                res.append(''.join(temp))
+                return
+            if oc > 0:
+                temp.append('(')
+                helper(oc-1, cc)
+                temp.pop()
+            if cc > oc and cc > 0:
+                temp.append(')')
+                helper(oc, cc-1)
+                temp.pop()
+        helper(n,n)
+        return res
+	
+##########################################
+https://leetcode.com/problems/course-schedule-ii/
+create dependency graph of courses
+- for this create adjecency list map course : prerequisites
+- use visited for result and adding all node visited
+- use visiting to add currently visiting node - this is used to detect cycle is visitng node rearrives then cycle - visisted will give list in topological sort order
+
+class Solution:
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        
+        #create adjacency list
+        preq_cnt = collections.defaultdict(list)
+        for course, preq in prerequisites:
+            preq_cnt[course].append(preq)
+        
+        visited = []
+        visiting = set()
+        def getDepsOrder(course):
+            if course in visited:              
+                return True
+            if not preq_cnt[course]: 
+                visited.append(course)
+                return True
+            if course in visiting:
+                return False
+            visiting.add(course)
+            for preq in preq_cnt[course]:
+                if not getDepsOrder(preq):
+                    return False
+            visiting.remove(course)
+            print(course)
+            visited.append(course)
+            return True
+
+        for course in range(numCourses):
+            if not getDepsOrder(course):
+                return []
+        return visited
+
+
+
+#################################################################################
+https://leetcode.com/problems/search-in-rotated-sorted-array/
+1. check if m is in left or right half from pivot (left half mean nums[m]>= nums[0])
+2. if in left half - if target is greater then mid - search in right 
+                   - if target is small - two case if target is < nums[0] search in right else in left 
+3. if in right half - if target is less then mid then search in left
+                    - else - if target is > nums[0] then search in left else right 
+def search(self, nums: List[int], target: int) -> int:
+        s, e = 0, len(nums) -1
+        while s<=e:
+            m = (s+e)//2
+            if nums[m] == target:
+                return m
+            if nums[m] >= nums[0]: # left half
+                if target > nums[m] or target < nums[0]:
+                    s = m+1
+                else:
+                    e = m-1
+            else: # right half
+                if target < nums[m] or target >= nums[0]:
+                    e = m-1
+                else:
+                    s = m+1
+        return -1
+	
+
+https://leetcode.com/problems/longest-consecutive-sequence
+# idea is to find the starting point of each sequence - how ? num-1 does not exist in hashset(nums) -->  100(s) 3 2 200(s) 1(s)
+# once starting point is found check how long the sequence is [since each sequence will have only one starting point - this will happen in o(n) operation]
+
+    def longestConsecutive(self, nums: List[int]) -> int:
+        hset_nums = set(nums)
+        res = 0
+        for num in nums:
+            if num-1 not in hset_nums: #start
+                seq_count = 0
+                temp = num
+                while True:
+                    seq_count +=1
+                    temp +=1
+                    if temp not in hset_nums:
+                        break
+                res = max(res, seq_count)
+        return res
+
+#encode decode string
+-> input - list of string 
+-> output - single merged string 
+how would you encode and decode this if string can have any character 
+
+--> idea is to count length of each string and merge as Len1#str1Len2#str2
+len1 - we will know how long str is and # we will know when str is starting [# because len can be 123 and string can also be numeric 2334423
+
+--->https://leetcode.com/problems/product-of-array-except-self/
+ist round - product from left 
+2nd round - product from right 
+res - product on ith index is sum of immediate values on previous and next index as they will have product from left and right except self
+space optimisation - keep ist round in res and in sec round use 1 variable and use that variable to update result 
+    def productExceptSelf(self, nums: List[int]) -> List[int]:
+        res = []
+        temp = 1
+        for i in range(len(nums)-1):
+            temp = temp*nums[i]
+            res.append(temp)
+        temp = 1
+        res.append(temp)
+        for i in range(len(nums)-1, 0, -1):
+            res[i] = res[i-1]*temp
+            temp = temp*nums[i]
+        res[0] = temp
+        return res
+
+#house robber 3
+robbing alternative node in binary tree
+https://leetcode.com/problems/house-robber-iii/
+- idea - return (robWithRoot, robWithoutRoot)
+robwithtoot - will take value of without root value of child
+robWithoutRoot - take base of with root or without root from child
+ def rob(self, root: Optional[TreeNode]) -> int:
+        def helper(node):
+            if not node:
+                return (0,0)
+            l = helper(node.left) 
+            r = helper(node.right)
+            return (node.val+l[1]+r[1], max(l)+max(r))
+        
+        l,r = helper(root)
+        return max(l,r)
+
+#subsets II
+https://leetcode.com/problems/subsets-ii/description/
+1,2,2,3
+
+for every index we make choice to take or not take element
+
+               
+      [1]                          []       i=0
+     [1,2]     [1]             [2]         []  i=1
+  122    12   12      1      22   2     2    []  i=2
+1223 122 123 123 12 13  1  223 22 23 2 23 2  3  []  i=3
+here we can see duplicates for this what we can do is we can sort and skip if same element while not taking element
+
+      [1]                          []
+     [1,2]     [1]              [2]      []
+  122    12         1         22   2     []
+1223 122 123      13  1  223 22 23 2    3  []
+
+def helper(ind, subset):
+  if ind == len(nums): # if reached to last index return the subset created
+  	res.append(subset[::]) # a way to have a copy
+  # choose element of index into subset
+  subset.append(nums[ind])
+  helper(ind+1, subset) #call for next index
+  subset.pop()
+  # not choose element of index
+  # ignore duplicate
+  while (ind+1)<len(nums) and nums[ind] ==nums[ind+1]:
+  	ind=i+1
+  subset(ind+1, subset)
+helper(0, [])
+return res
+
+
+https://leetcode.com/problems/two-city-scheduling/
+
+approach- 1 make decision tree -> choos A or B city for index i  => 2^n complexity - use memoisation
+approach -2 check the difference in cost for each i - sort  and select B city ist half and A for 2nd half 
+class Solution:
+    def twoCitySchedCost(self, costs: List[List[int]]) -> int:
+        # dp = {}
+        # def helper(ind, acount, bcount, cost):
+        #     if ind>len(costs) or acount > len(costs)/2 or bcount > len(costs)/2:
+        #         return float('inf')
+        #     if ind == len(costs):
+        #         return 0
+        #     if (ind, acount, bcount) not in dp:
+        #         dp[(ind, acount, bcount)] = min(
+        #             helper(ind+1, acount+1, bcount, cost) + costs[ind][0], 
+        #             helper(ind+1, acount, bcount+1, cost) + costs[ind][1])
+        #     return dp[(ind, acount, bcount)] 
+        # return helper(0, 0, 0, 0)
+
+        costDiffs = [0]*len(costs)
+        for i,(a,b) in enumerate(costs):
+            costDiffs[i] = (b-a, i)
+        costDiffs = sorted(costDiffs, key= lambda costdiff:costdiff[0])
+        n = len(costDiffs)//2
+        res = 0
+        for i in range(n):
+            res += costs[costDiffs[i][1]][1]
+        for i in range(n, 2*n):
+            res += costs[costDiffs[i][1]][0]
+        return res
